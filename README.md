@@ -46,7 +46,7 @@ make
 
 ## Documentation for RHE_reg
 
-After compiling the executble fastppca is present in the build directory. 
+After compiling the executble rhe_reg is present in the build directory. 
 To run RHE_reg, use
 
 *``./RHE_reg <command_line arguments> ``

@@ -596,8 +596,6 @@ int main(int argc, char const *argv[]){
 
 
 
-//	cout<<"printing means: "<<endl<<means<<endl; 
-//	cout<<"printing std: "<<endl<<stds<<endl; 	
 	ofstream c_file;
 	if(debug){
 		c_file.open((string(command_line_opts.OUTPUT_PATH)+string("cvals_orig.txt")).c_str());
@@ -644,9 +642,6 @@ int main(int argc, char const *argv[]){
 	//MatrixXdr res(1,g.Nindv); 
 	//multiply_y_post_fast(zb, 1, res, false); 
 	//cout<< MatrixXdr::Constant(1,4,1)<<endl;  
-	MatrixXdr V(g.Nindv, g.Nindv); 
-	//V =  
-	//compute y^TKy
 	MatrixXdr res(g.Nsnp, 1); 
 	multiply_y_pre_fast(pheno,1,res,false); 
 	res = res.cwiseProduct(stds); 
@@ -657,84 +652,31 @@ int main(int argc, char const *argv[]){
 	Xy = res-resid; 
 	double yKy = (Xy.array()* Xy.array()).sum(); 
 	yKy = yKy/g.Nsnp; 
-//	cout<< "yKy: "<<yKy<<endl;  
-	//compute tr[K]
 	double tr_k =0 ;
 	MatrixXdr temp = sum2 + g.Nindv* means.cwiseProduct(means) - 2 * means.cwiseProduct(sum);
 	temp = temp.cwiseProduct(stds);
 	temp = temp.cwiseProduct(stds); 
 	tr_k = temp.sum() / g.Nsnp;
-//	clock_t trK =clock(); 
-//	cout<<"computing trace of K: "<<trK-it_begin<<endl;  
-//	for (int j=0; j<g.Nsnp; j++)
-//	{
-//		double temp = sum2(j,0)+g.Nindv*means(j,0)*means(j,0)- 2*means(j,0)*sum(j,0); 
-//		temp = temp * stds(j,0) * stds(j,0); 
-//		tr_k += temp; 
-//	} 	
-//	tr_k = tr_k / g.Nsnp; 
-	//compute tr[K^2]
-	//for gaussian
-//	std::random_device rd; 
-//	std::mt19937 gen(rd()); 
-//	std::normal_distribution<> d(0,1); 
-
-//	boost::normal_distribution<> dist(0,1); 
-//	boost::mt19937 gen; 
-//	boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > random_vec(gen,dist); 
 	double tr_k2=0;
 	VectorXd vec(g.Nsnp);
 	for(int i=0; i<g.Nsnp; i++)
 		vec(i)=stds(i); 
-	//DiagonalMatrix<double,a> Sigma(a); 
-	//Sigma.diagonal()=vec; 
-//	cout<<"sigma: "<<Sigma<<endl; 
 
-	//cout<<"vec: "<<vec<<endl; 
 	clock_t it_begin =clock(); 
 	for(int i=0; i<B; i++){
-		//G^T zb 
-        	//clock_t random_step=clock(); 
 		MatrixXdr zb= MatrixXdr::Random(g.Nindv, 10);
 		zb = zb * sqrt(3); 
-//		for(int t=0; t<g.Nindv; t++)
-//			for(int k=0; k<10; k++)
-//				zb(t,k) = random_vec(); 	
 		MatrixXdr res(g.Nsnp, 10); 
-		//clock_t gen_zb=clock(); 
-	//	cout<<"generating random Zb: "<<endl;
-	//	print_time(); 
 		multiply_y_pre_fast(zb,10,res, false);
-	//	cout<<"mailman algorithm "<<endl;
-	//	print_time(); 	 
-//		cout<<"printing result"<< endl<<res<<endl; 
-		//sigma scale \Sigma G^T zb; compute zb column sum
 		MatrixXdr zb_sum = zb.colwise().sum(); 
-	//	cout<<"column sum of Zb "<<endl; 
-	//	print_time(); 
-		//cout<<zb_sum<<endl;  
-		//std::vector<double> zb_sum(10,0);  
-		//res = Sigma*res;
 		for(int j=0; j<g.Nsnp; j++)
 		        for(int k=0; k<10;k++)
 		             res(j,k) = res(j,k)*stds(j,0); 
-	//	cout<<"scaling result: "<<endl; 
-	//	print_time();  
-		//compute /Sigma^T M z_b
-//		cout<<"printing Sigma G^T zb: " <<endl<<res<<endl; 
 		MatrixXdr resid(g.Nsnp, 10);
 		MatrixXdr inter = means.cwiseProduct(stds);
-		//cout<<"inter: "<<inter<<endl; 
 		resid = inter * zb_sum;
-	//	cout<<"scaling residual "<<endl; print_time();    
-//		cout<<"printing first resisudual: "<<endl<<resid<<endl; 
 		zb = res - resid; // X^Tzb =zb' 
 		clock_t Xtzb = clock(); 
-	//	cout<<"compute X^T Zb: "<<endl;print_time();  
-//		cout<<"printing X^tzb : " <<endl<<zb <<endl;
-		//cout<<zb<<endl; 
-		//compute zb' %*% /Sigma 
-		//zb = Sigma*zb ; 
 		
               	for(int k=0; k<10; k++){
                   for(int j=0; j<g.Nsnp;j++){
@@ -742,24 +684,14 @@ int main(int argc, char const *argv[]){
                                               
 		MatrixXdr new_zb = zb.transpose(); 
 		MatrixXdr new_res(10, g.Nindv);
-//		cout<<"print zb transpose: "<<endl<<new_zb<<endl; 
 		multiply_y_post_fast(new_zb, 10, new_res, false); 
-//		cout<< "printing zb^T sigma g^t "<<endl <<new_res<<endl;  
-		//new_res =  zb'^T \Sigma G^T 10*N 
 		MatrixXdr new_resid(10, g.Nsnp); 
 		MatrixXdr zb_scale_sum = new_zb * means;
-//		cout<<"printing zb_scale_sum: "<<endl<< zb_scale_sum<<endl; 
 		new_resid = zb_scale_sum * MatrixXdr::Constant(1,g.Nindv, 1);  
-	//	cout<<"printing new_resid: "<<endl<<new_resid<<endl; 
-	//	cout<<((new_res - new_resid).array() * (new_res-new_resid).array()).sum()/g.Nsnp/g.Nsnp/10;  
 		tr_k2+= ((new_res - new_resid).array() * (new_res-new_resid).array()).sum();  
-//		clock_t rest = clock(); 
-//		cout<<"computing rest: "<<rest - Xtzb<<endl; 
 		
 	}
 	tr_k2  = tr_k2 /10/g.Nsnp/g.Nsnp/B; 
-//	cout<<"approximated tr[k^2]: "<<tr_k2<<endl;
-//	cout<<"tr[k]: "<<tr_k<<endl;
 
 	MatrixXdr A(2,2); 
 	A(0,0)=tr_k2; A(0,1)=tr_k; A(1,0)=tr_k; A(1,1)= g.Nindv; 

@@ -16,7 +16,9 @@ struct options{
 	std::string PHENOTYPE_FILE_PATH; 
 	std::string COVARIATE_FILE_PATH; 
 	std::string COVARIATE_NAME; 
+	std::string PAIR_PATH; 
 	std::string OUTPUT_PATH;
+	int pheno_idx; 
 	int batchNum; 
 	int num_of_evec ;
 	bool getaccuracy ;
@@ -27,6 +29,12 @@ struct options{
 	bool fast_mode;
 	bool missing;
 	bool text_version;
+	bool reg; 
+	bool gwas; 
+	bool bpheno; 
+	bool pheno_fill; 
+	bool noh2g; 
+	float tr2; 	
 };
 
 template<typename T, typename U>
@@ -190,10 +198,10 @@ public:
 void parse_args(int argc, char const *argv[]){
 	
 	// Setting Default Values
-	command_line_opts.num_of_evec=2;
 	command_line_opts.getaccuracy=false;
 	command_line_opts.debugmode=false;
 	command_line_opts.OUTPUT_PATH = "";
+	command_line_opts.PAIR_PATH=""; 
 	bool got_genotype_file=false;
 	command_line_opts.l=2;
 	command_line_opts.accelerated_em=0;
@@ -201,10 +209,15 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.fast_mode=true;
 	command_line_opts.missing=false;
 	command_line_opts.text_version = false;
-	
-
+	command_line_opts.reg=true; 
+	command_line_opts.gwas=false; 
+	command_line_opts.tr2=-1; 
+	command_line_opts.pheno_idx=0; 
+	command_line_opts.bpheno=false; 
+	command_line_opts.pheno_fill=false;
+	command_line_opts.noh2g=false;  
 	if(argc<3){
-		cout<<"Correct Usage is "<<argv[0]<<" -p <parameter file>"<<endl;
+		cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -p <phenotype file> -c <covaraite file> -b <zb/10> "<<endl;
 		exit(-1);
 	}
 
@@ -214,7 +227,6 @@ void parse_args(int argc, char const *argv[]){
 		ConfigFile cfg(cfg_filename);
 		got_genotype_file=cfg.keyExists("genotype");
 		command_line_opts.batchNum = cfg.getValueOfKey<int> ("batchNum",10); 
-		command_line_opts.num_of_evec=cfg.getValueOfKey<int>("num_evec",2);
 		command_line_opts.getaccuracy=cfg.getValueOfKey<bool>("accuracy",false);
 		command_line_opts.debugmode=cfg.getValueOfKey<bool>("debug",false);
 		command_line_opts.l=cfg.getValueOfKey<int>("l",0);
@@ -226,6 +238,7 @@ void parse_args(int argc, char const *argv[]){
 		command_line_opts.accelerated_em = cfg.getValueOfKey<int>("accelerated_em",0);
 		command_line_opts.memory_efficient = cfg.getValueOfKey<bool>("memory_efficient",false);	
 		command_line_opts.fast_mode = cfg.getValueOfKey<bool>("fast_mode",true);
+		command_line_opts.reg = cfg.getValueOfKey<bool>("reg",true);
 		command_line_opts.missing = cfg.getValueOfKey<bool>("missing",false);	
 		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version",false);							
 	}
@@ -249,6 +262,10 @@ void parse_args(int argc, char const *argv[]){
                                 command_line_opts.COVARIATE_NAME = string(argv[i+1]);
                                 i++;
                         }
+			else if(strcmp(argv[i], "-gc")==0){
+				command_line_opts.PAIR_PATH=string(argv[i+1]); 
+				i++; 
+			}
 			else if(strcmp(argv[i],"-o")==0){
 				command_line_opts.OUTPUT_PATH = string(argv[i+1]);
 				i++;
@@ -261,13 +278,29 @@ void parse_args(int argc, char const *argv[]){
 				command_line_opts.batchNum=atoi(argv[i+1]); 
 				i++; 
 			}
-			else if(strcmp(argv[i],"-l")==0){
-				command_line_opts.l = atoi(argv[i+1]);
-				i++;
+			else if(strcmp(argv[i], "-mpheno")==0){
+				command_line_opts.pheno_idx=atoi(argv[i+1]); 
+				i++; 
 			}
+			else if(strcmp(argv[i], "-gwas")==0){
+				command_line_opts.gwas=true; 
+			}
+			else if(strcmp(argv[i], "-binary")==0){
+				command_line_opts.bpheno=true; 
+			}
+			else if (strcmp(argv[i], "-fill")==0){
+				command_line_opts.pheno_fill=true; 
+			}
+			else if (strcmp(argv[i],"-noh2g")==0){
+				command_line_opts.noh2g=true; 
+			}	
 			else if(strcmp(argv[i],"-aem")==0){
 				command_line_opts.accelerated_em = atof(argv[i+1]);
-				i++;
+				i++; 
+			}
+			else if(strcmp(argv[i], "-tr2")==0){
+                                command_line_opts.tr2=atof(argv[i+1]);
+                        	i++; 
 			}
 			else if(strcmp(argv[i],"-v")==0)
 				command_line_opts.debugmode=true;
@@ -277,14 +310,19 @@ void parse_args(int argc, char const *argv[]){
 				command_line_opts.memory_efficient=true;
 			else if(strcmp(argv[i],"-miss")==0)
 				command_line_opts.missing=true;
-			else if(strcmp(argv[i],"-nfm")==0)
+			else if(strcmp(argv[i],"-nfm")==0){
 				command_line_opts.fast_mode=false;
+				}
+			else if(strcmp(argv[i],"-nreg")==0){
+				cout<<"set false"<<endl;  
+				command_line_opts.reg=false;
+				} 
 			else if(strcmp(argv[i],"-txt")==0)
 				command_line_opts.text_version=true;
 			
 			else{
 				cout<<"Not Enough or Invalid arguments"<<endl;
-				cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -k <num_of_evec> -b <num_of_zb/10>  -v (for debugmode) -a (for getting accuracy)"<<endl;
+				cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -p <phenotype file> -c <covariate file> -cn <covariate name> -b <num_of_zb/10>  -v (for debugmode) -a (for getting accuracy)"<<endl;
 				exit(-1);
 			}
 		}
@@ -298,6 +336,8 @@ void parse_args(int argc, char const *argv[]){
 				command_line_opts.memory_efficient=true;
 		else if(strcmp(argv[i],"-nfm")==0)
 				command_line_opts.fast_mode=false;
+		else if(strcmp(argv[i], "-nreg")==0)
+				command_line_opts.reg=false; 
 		else if(strcmp(argv[i],"-miss")==0)
 				command_line_opts.missing=true;
 		else if(strcmp(argv[i],"-txt")==0)

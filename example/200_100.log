@@ -1,0 +1,30 @@
+PLINK v1.90b3.45 64-bit (13 Jan 2017)
+Options in effect:
+  --file 200_100
+  --make-bed
+  --noweb
+  --out 200_100
+
+Hostname: login2
+Working directory: /u/project/zarlab/wuyue071/2017/lmm_svi/s_2
+Start time: Thu Sep 21 14:55:34 2017
+
+Note: --noweb has no effect since no web check is implemented yet.
+Random number seed: 1506030934
+24159 MB RAM detected; reserving 12079 MB for main workspace.
+Allocated 3821 MB successfully, after larger attempt(s) failed.
+Scanning .ped file... done.
+Performing single-pass .bed write (100 variants, 200 people).
+--file: 200_100-temporary.bed + 200_100-temporary.bim + 200_100-temporary.fam
+written.
+100 variants loaded from .bim file.
+200 people (0 males, 0 females, 200 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to 200_100.nosex .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 200 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+100 variants and 200 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to 200_100.bed + 200_100.bim + 200_100.fam ... done.
+
+End time: Thu Sep 21 14:55:34 2017

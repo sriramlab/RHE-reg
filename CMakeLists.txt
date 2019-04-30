@@ -16,4 +16,4 @@ IF (NOT DEFINED DEBUG)
 ENDIF()
 ADD_DEFINITIONS(-DDEBUG=${DEBUG})
 
-add_executable(fastppca src/fastppca.cpp src/genotype.cpp src/storage.cpp)
+add_executable(RHE_reg src/rhe.cpp src/genotype.cpp src/storage.cpp)
